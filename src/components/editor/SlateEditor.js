@@ -1,17 +1,13 @@
 import React, { Component } from 'react';
 import { Editor } from 'slate-react';
 import { Value } from 'slate';
-import io from 'socket.io-client';
+import { withRouter } from 'react-router-dom';
+import QueryString from 'query-string';
 import './SlateEditor.css';
 
 const assignDeep = require('assign-deep');
 const Automerge = require('automerge');
-const socket = io('http://192.168.0.109:8000');
-// const socket = io.connect(); 
 
-const subscribeToChanges = cb => {
-  socket.on('receivedChange', changes => cb(null, changes));
-}
 
 const initialValue = Value.fromJSON({
   document: {
@@ -62,16 +58,87 @@ class SlateEditor extends Component {
 
   constructor(props) {
     super(props);
+    this.fetchContent();
     this.doc = Automerge.init();
-    subscribeToChanges((err, changes) => {
-      console.log('received changes');
+    this.props.subscribeToChanges((err, changes) => {
       const newDoc = Automerge.applyChanges(this.doc, changes);
       this.setState({ value: Value.fromJSON(newDoc.note) });
     });
   }
 
+  componentDidUpdate(prevProps) {
+    if (this.props.importedText != prevProps.importedText) {
+      console.log('test');
+      const value = Value.fromJSON({
+        document: {
+          nodes: [
+            {
+              object: 'block',
+              type: 'paragraph',
+              nodes: [
+                {
+                  object: 'text',
+                  leaves: [
+                    {
+                      text: this.props.importedText,
+                    },
+                  ],
+                },
+              ],
+            }
+          ],
+        },
+      });
+      this.setState({ value });
+    }
+  }
+
+  fetchContent = () => {
+    const id = QueryString.parse(this.props.location.search).id;
+    if (id == null) this.setState({ value: initialValue });
+    fetch(`/api/docs/${id}`)
+    .then(res => res.json())
+    .then(results => {
+      if (results.length > 0) {
+        const doc = results[0];
+        const value = Value.fromJSON(JSON.parse(doc.content) ||  initialValue);
+        this.setState({ value });
+      }
+    })
+  }
+
+  saveContentDB = value => {
+    const id = QueryString.parse(this.props.location.search).id;
+    if (id == null) return;
+    const content = JSON.stringify(value.toJSON());
+    console.log('saving content to DB');
+    fetch(`/api/docs/${id}`)
+    .then(res => res.json())
+    .then(results => {
+      if (results.length > 0) {
+        const data = { content: content };
+        fetch(`/api/docs/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(data),
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'same-origin'
+        })
+        .then(res => {
+          if (res.ok) return res.json();
+          throw new Error(res.statusText);
+        })
+        .then(data => {
+          console.log(data);
+        })
+        .catch(err => console.log(err));
+      } else console.log('doc doesn\'t exist in database');
+    });
+  }
+
   onChange = (change) => {
     let { value } = change;
+    clearTimeout()
+    this.props.onContentChange(value);
     this.setState({ value }, () => {
       let setValue = false;
       change.operations.forEach(o => {
@@ -83,7 +150,10 @@ class SlateEditor extends Component {
           d.note = assignDeep(d.note, newValue);
         });
         const changes = Automerge.getChanges(this.doc, newDoc);
-        socket.emit('giveChange', changes);
+        this.props.pushChanges(changes);
+
+        if (this.saveTimeout) clearTimeout(this.saveTimeout);
+        this.saveTimeout = setTimeout(() => this.saveContentDB(value), 500);
       }
     });
   }
@@ -106,9 +176,12 @@ class SlateEditor extends Component {
   render() {
     return (
       <Editor 
+        ref="slateEditor"
         className="SlateEditor"
         plugins={plugins}
-        style={{ border: "solid 1px red" }}
+        style={{
+          height: '1000px'
+        }}
         value={this.state.value} 
         onChange={this.onChange}
         renderMark={this.renderMark} />
@@ -116,4 +189,4 @@ class SlateEditor extends Component {
   }
 }
 
-export default SlateEditor;
+export default withRouter(SlateEditor);

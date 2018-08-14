@@ -6,9 +6,15 @@
     "assign-deep": "^1.0.0",
     "automerge": "^0.8.0",
     "immutable": "^3.8.2",
+    "jwt-decode": "^2.2.0",
+    "moment": "^2.22.2",
+    "query-string": "^6.1.0",
     "react": "^16.4.2",
     "react-bootstrap": "^0.32.1",
+    "react-datepicker": "^1.6.0",
     "react-dom": "^16.4.2",
+    "react-dropzone": "^4.3.0",
+    "react-router-dom": "^4.3.1",
     "react-scripts": "1.1.4",
     "slate": "^0.37.3",
     "slate-react": "^0.15.4",
@@ -19,5 +25,6 @@
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
-  }
+  },
+  "proxy": "http://localhost:8000"
 }

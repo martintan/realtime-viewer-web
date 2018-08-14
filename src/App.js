@@ -1,29 +1,19 @@
 import React, { Component } from 'react';
-import SlateEditor from './components/SlateEditor';
 import { Grid, Row, Col } from 'react-bootstrap';
+import NavigationBar from './components/NavigationBar';
+import Main from './components/Main';
 import logo from './logo.svg';
 
-class App extends Component {
+const colDebugStyle = { border: 'solid 1px red' };
+
+export default class App extends Component {
 
   render() {
     return (
-      <div className="App">
-        <Grid fluid={true}>
-          <Row>
-
-          </Row>
-          <Row>
-            <Col xs={3}>
-
-            </Col>
-            <Col xs={9}>
-              <SlateEditor />
-            </Col>
-          </Row>
-        </Grid>
+      <div>
+        <NavigationBar />
+        <Main />
       </div>
     );
   }
 }
-
-export default App;
