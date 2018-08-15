@@ -8,6 +8,7 @@
     "immutable": "^3.8.2",
     "jwt-decode": "^2.2.0",
     "moment": "^2.22.2",
+    "pdfjs-dist": "^2.0.489",
     "query-string": "^6.1.0",
     "react": "^16.4.2",
     "react-bootstrap": "^0.32.1",

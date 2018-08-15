@@ -6,6 +6,7 @@ import Attendees from './Attendees';
 import Comments from './Comments';
 import { withRouter } from 'react-router-dom';
 import Dropzone from 'react-dropzone';
+import PdfJsLib from 'pdfjs-dist';
 
 import 'react-datepicker/dist/react-datepicker.css';
 import 'react-datepicker/dist/react-datepicker-cssmodules.css';
@@ -76,7 +77,26 @@ class Sidebar extends Component {
         })
         .then(data => {
           console.log('response:', data);
-          this.props.onImportDoc(data.text);
+          PdfJsLib.GlobalWorkerOptions.workerSrc = '//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.0.489/pdf.worker.js';
+          PdfJsLib.getDocument(data.file)
+          .then(pdf => pdf.getPage(1))
+          .then(pdfPage => pdfPage.getTextContent())
+          .then(textContent => {
+            var lastY = -1;
+            var arr = [];
+            var p = '';
+            textContent.items.forEach(i => {
+              if (lastY != i.transform[5]) {
+                if (lastY - i.transform[5] < 15) arr.push('');
+                arr.push(p);
+                lastY = i.transform[5];
+                p = '';
+              }
+              p += i.str;
+            });
+            console.log(arr);
+            this.props.onImportDoc(arr);
+          });
         })
         .catch(error => console.log(error));
     });
@@ -110,7 +130,7 @@ class Sidebar extends Component {
             className='dropzone' 
             activeStyle={dropZoneStyleActive}
             onDrop={this.handleDrop}>
-            <h3 className='dropzone_heading'>Import documents (supported: docx)</h3>
+            <h3 className='dropzone_heading'>Import documents (supported: pdf)</h3>
           </Dropzone>
 
         </FormGroup>

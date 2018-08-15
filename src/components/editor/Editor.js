@@ -21,6 +21,7 @@ export default class Editor extends Component {
     clients: [],
     value: null,
     text: null,
+    pdfParsedText: null,
   }
 
   constructor(props) {
@@ -35,7 +36,14 @@ export default class Editor extends Component {
 
   onContentChange = value => this.setState({ value });
 
-  onImportDoc = text => this.setState({ text });
+  onImportDoc = text => {
+    if (Array.isArray(text)) {
+      this.setState({ pdfParsedText: text });
+    } else {
+      this.setState({ text }); 
+    }
+
+  };
 
   render() {
     return (
@@ -53,7 +61,9 @@ export default class Editor extends Component {
                 subscribeToChanges={subscribeToChanges} 
                 pushChanges={pushChanges}
                 onContentChange={this.onContentChange}
-                importedText={this.state.text} />
+                
+                importedText={this.state.text}
+                pdfParsedText={this.state.pdfParsedText} />
             </Col>
           </Row>
         </Grid>

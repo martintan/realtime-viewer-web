@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Editor } from 'slate-react';
 import { Value } from 'slate';
 import { withRouter } from 'react-router-dom';
+import { PageHeader } from 'react-bootstrap';
 import QueryString from 'query-string';
 import './SlateEditor.css';
 
@@ -54,6 +55,7 @@ class SlateEditor extends Component {
 
   state = {
     value: initialValue,
+    documentName: null,
   }
 
   constructor(props) {
@@ -91,6 +93,9 @@ class SlateEditor extends Component {
       });
       this.setState({ value });
     }
+    if (this.props.pdfParsedText != prevProps.pdfParsedText) {
+      this.addContent(this.props.pdfParsedText);
+    }
   }
 
   fetchContent = () => {
@@ -102,7 +107,8 @@ class SlateEditor extends Component {
       if (results.length > 0) {
         const doc = results[0];
         const value = Value.fromJSON(JSON.parse(doc.content) ||  initialValue);
-        this.setState({ value });
+        const documentName = doc.name;
+        this.setState({ value, documentName });
       }
     })
   }
@@ -137,7 +143,6 @@ class SlateEditor extends Component {
 
   onChange = (change) => {
     let { value } = change;
-    clearTimeout()
     this.props.onContentChange(value);
     this.setState({ value }, () => {
       let setValue = false;
@@ -158,6 +163,17 @@ class SlateEditor extends Component {
     });
   }
 
+  addContent = contentList => {
+    this.refs.slateEditor.change((change) => {
+      contentList.forEach(text => {
+        change
+          .call(c => c.insertBlock('paragraph'))
+          .insertText(text)
+          .moveToEnd()
+      });
+    });
+  }
+
   renderMark = props => {
     switch(props.mark.type) {
       case 'bold':
@@ -175,7 +191,9 @@ class SlateEditor extends Component {
 
   render() {
     return (
-      <Editor 
+      <div>
+        <PageHeader style={{ marginTop: '20px' }}>{this.state.documentName || 'Untitled document'}</PageHeader>
+        <Editor 
         ref="slateEditor"
         className="SlateEditor"
         plugins={plugins}
@@ -185,6 +203,7 @@ class SlateEditor extends Component {
         value={this.state.value} 
         onChange={this.onChange}
         renderMark={this.renderMark} />
+      </div>
     );
   }
 }
